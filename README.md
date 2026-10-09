@@ -1,32 +1,66 @@
-# Cashier Management System — frontend prototype
+# Cashier Management System — Supabase Integration
 
-Generic-branded Next.js + React frontend for deployment on Vercel via GitHub.
+Generic cashier app, Next.js 15 / React 19, Supabase Auth / PostgreSQL / Storage, Vercel.
 
-## Deploy with GitHub and Vercel
-1. Create a new GitHub repository (for example `cashier-management-system`).
-2. Upload **the contents of this folder** to the repository root, including `package.json` and `app/`.
-3. On vercel.com choose **Add New → Project**, import your GitHub repository.
-4. Framework should auto-detect **Next.js**. Leave build settings as default and click **Deploy**.
-5. Open your Vercel URL for frontend testing.
+## 1. Create Supabase project
 
-## Local development
+1. In Supabase Dashboard create a project.
+2. Go to **SQL Editor**, paste/run `supabase/schema.sql` ONCE on a **new** project. This creates profiles, cash transactions, POS accounts, audit logs, private image storage, triggers, RPC operations, and Row Level Security.
+3. In **Authentication > Users** create the cashier and admin users. Password authentication requires confirmed email; create users via the dashboard or enable email confirmation.
+4. In **SQL Editor** promote the correct user account (replace email):
+
+```sql
+update public.profiles set role='Super Admin'
+where id=(select id from auth.users where email='you@example.com');
 ```
-npm install
-npm run dev
-```
 
-## Current limitations — read before testing
-- FRONTEND DEMO ONLY. Data lives in the browser's `localStorage`. It is not shared between devices, browser profiles, or computers, and can be erased. Do not enter real financial or customer data.
-- Demo account name/role are switchable in the header. There is **no login or authenticated authorization** yet. Role restrictions are illustrative only.
-- The Petty Cash / Funds flow is implemented for UI testing: details → confirmation → signature → immediate balance change → pending approval → proof photo → admin approval/request explanation. A review action never changes the amount again.
-- The receipt capture button in the transaction details is a **local device photo demo**. Secure one-time links and phone-to-laptop transfer cannot work without a backend/shared storage, and must not be mistaken as implemented.
-- The demo POS wizard captures client and vehicle, quotation items, partial/multiple payment entries, optional additional services, COGS total, and closes when paid. Receipt enforcement and per-item COGS still require backend integration.
-- Manual sales are add-only in the demo. No server-side idempotency or duplicate prevention yet.
-- Signature snapshots and receipt snapshots in localStorage may hit browser storage limits. Use small demo images.
-- Production phases: Supabase Auth + PostgreSQL + private Storage; true role/branch RLS; authoritative timestamps; immutable audit events; idempotent ledger; authenticated approval APIs; secure short-lived one-time camera capture tokens; receipt verification, POS COGS lines; real reports and discrepancy reconciliation.
+To grant another user Admin use the same query with `role='Admin'`.
 
-## Security
-Never use this frontend demo for real cash accounting or audit evidence. It is intentionally a workflow prototype; true identity, authorization, audit reliability and financial consistency require a server-side implementation.
+Do not give cashiers SQL access or change roles through UI. Never publish the Supabase service-role key.
 
-## POS status update
-New POS wizard submissions are saved as **Pending**, even with partial or zero payments. They are not included in finalized Sales until an explicit **Close Account** action, which requires full payment. This is only a browser-local prototype; server-side enforcement comes with the backend.
+## 2. Connect Vercel
+
+Upload extracted project **contents** to a GitHub repository root. Import the repo at Vercel with Framework `Next.js` and root `./`.
+
+In Vercel > Project > Settings > Environment Variables add:
+
+- `NEXT_PUBLIC_SUPABASE_URL` — Project URL from Supabase > Connect / API settings.
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — public anon or publishable key from Supabase.
+
+Deploy/redeploy. Create users first, then sign in on the web app. Only these two public environment variables are used.
+
+## 3. What is working in this integration
+
+- Email/password Supabase Auth login, display name and role taken from `profiles`, sign out.
+- Persistent POS transactions, pending until **Close Account**; Sales displays **only Closed** POS automatically; no manual Add Sale.
+- Persistent Petty Cash/Funds and immediately adjusted ledger balances including Pending and Submit Explanation.
+- Additional Funds: signature + camera capture required **before posting**. Camera on device showing form. Images go into a private storage bucket.
+- Expense: signature before posting, optional receipt afterward; admin cannot approve without proof.
+- Admin can approve or request explanation, cashier creator can respond; server-enforced role/state checks.
+- Server-generated timestamps, automatic account-bound audit history, no client write to tables.
+
+## 4. IMPORTANT: work still needed before production use
+
+This is a backend-connected **development build**, NOT audited production accounting software.
+
+- Expense camera capture currently uses the browser's `capture` file input and can allow choosing gallery on some devices. Add server-mediated one-time phone camera sessions and QR capture before enforcing "camera-only" across devices.
+- POS additional payments are now available for Pending accounts through an RPC and are recorded in the audit trail. POS payment receipt capture, itemized COGS receipt capture, and editing pending POS items are NOT implemented; current UI still has demo labels. Do not use for real-money POS reconciliation yet.
+- Actual user access is currently single-organization/global for POS and cash transactions; add branch assignments and branch-specific RLS if branches need isolation.
+- Only transaction creation and review are protected by RPC; add idempotency keys, reconciliation and financial corrections with reversal entries before production.
+- Account balance derives from signed cash ledger entries, including pending amounts. Approvals do not double-post.
+- The UI account name is generic. No organization-specific branding.
+- Supabase project and Vercel GitHub integrations must be configured by the user; no deployment is done by the ZIP itself.
+
+## Troubleshooting
+
+If sign-in works but loading data fails, ensure SQL completed, user has a profile, and permissions/RLS are installed. If a photo fails, verify Storage bucket and camera permissions (HTTPS). If you just added Vercel environment variables, trigger a fresh deployment.
+
+## Phase 2 upgrade (existing Supabase project)
+
+If you already applied `supabase/schema.sql` from the previous download, run ONLY `supabase/migration_002_pos_payments.sql` in the Supabase SQL Editor.
+
+If you are creating a brand-new Supabase project, run `supabase/schema.sql` only; it already contains the Phase 2 additional-POS-payment function. Do not rerun the entire base schema against an existing database.
+
+After updating the GitHub repository and running the migration, Vercel redeploys the Next.js application. Test Pending POS > Add Payment > Close Account > Sales details using non-real-money test transactions.
+
+**Build verification:** Dependencies could not be downloaded within the build environment, so `next build` was not successfully run here. Vercel must confirm the build. Do not use for live cash handling without completing the remaining controls and end-to-end tests.
