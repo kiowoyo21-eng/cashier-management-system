@@ -19,7 +19,9 @@ async function authorize(req:NextRequest){
 export async function GET(req:NextRequest){try{const {admin}=await authorize(req);const {data:profiles,error}=await admin.from('profiles').select('id,display_name,role,created_at,is_active').order('created_at',{ascending:false});if(error)throw error;const {data:users,error:authError}=await admin.auth.admin.listUsers({page:1,perPage:1000});if(authError)throw authError;const emails=new Map(users.users.map(u=>[u.id,u.email]));return NextResponse.json({users:(profiles||[]).map(p=>({...p,email:emails.get(p.id)||''}))});}catch(e:any){return response(e.message, e.message?.includes('access')?403:400)}}
 export async function POST(req:NextRequest){try{const {admin,actor}=await authorize(req);const body=await req.json();const email=String(body.email||'').trim().toLowerCase(),name=String(body.name||'').trim(),role=String(body.role||'');if(!/^\S+@\S+\.\S+$/.test(email)||!name||name.length>120||!['Cashier','Admin'].includes(role))return response('Valid employee name, email and role required');
  // Invite users to set their own passwords; never email or expose a permanent password.
- const {data,error}=await admin.auth.admin.inviteUserByEmail(email,{data:{display_name:name}});if(error)throw error;
+ const siteUrl=(process.env.NEXT_PUBLIC_SITE_URL|| (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : req.nextUrl.origin)).replace(/\/$/,'');
+ const redirectTo=new URL('/auth/callback',siteUrl).toString();
+ const {data,error}=await admin.auth.admin.inviteUserByEmail(email,{data:{display_name:name},redirectTo});if(error)throw error;
  const id=data.user.id;const {error:profileError}=await admin.from('profiles').upsert({id,display_name:name,role,is_active:true},{onConflict:'id'});if(profileError)throw profileError;
  await admin.from('audit_logs').insert({actor_id:actor,entity_type:'user',entity_id:id,action:'User invited',detail:{role}});
  return NextResponse.json({ok:true,message:'Invitation email sent. User sets password from the link.'});
