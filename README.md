@@ -64,3 +64,14 @@ If you are creating a brand-new Supabase project, run `supabase/schema.sql` only
 After updating the GitHub repository and running the migration, Vercel redeploys the Next.js application. Test Pending POS > Add Payment > Close Account > Sales details using non-real-money test transactions.
 
 **Build verification:** Dependencies could not be downloaded within the build environment, so `next build` was not successfully run here. Vercel must confirm the build. Do not use for live cash handling without completing the remaining controls and end-to-end tests.
+
+## Phase 3: Super Admin User Management + Discrepancy
+
+1. On the same Supabase project where `schema.sql` and `migration_002_pos_payments.sql` were applied, open SQL Editor. Run **`supabase/migration_003_admin_reconciliation.sql` exactly once**. It adds `profiles.is_active`, cash reconciliation history and admin-only RPC, plus inactive-account checks on existing finance RPCs.
+2. In Vercel → Project → Settings → Environment Variables, set **`SUPABASE_SERVICE_ROLE_KEY`** to the service-role key from Supabase API settings. **SERVER ONLY**: never add `NEXT_PUBLIC_` to this key or paste it into frontend code. Keep existing `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. Configure Supabase Authentication → URL Configuration → Site URL to your deployed Vercel URL, and add your Vercel origin to the allowed Redirect URLs for invitations. Configure a functional SMTP provider if invitation emails fail to send.
+4. Upload the updated repository files to GitHub and redeploy Vercel. Sign in with an existing `Super Admin` user, then open **User Management** and invite Cashier/Admin employees. Invitees set their own passwords through the email link.
+5. Test deactivating an employee, log out / in, and verify the employee cannot access financial RPC actions; confirm Supabase audit records are created.
+6. Open **Discrepancy**, select Petty Cash or Funds, enter actual counted cash and submit. `Expected` includes every saved ledger movement, including pending entries, and the difference is stored with the Super Admin ID and time. This does NOT yet reconcile a POS till.
+
+**IMPORTANT:** Do not use for live funds yet. Receipt capture via phone link, POS receipt enforcement, comprehensive testing, multi-branch authorization and production-grade reconciliation still need further work. `npm install` was blocked in the development environment by DNS (`EAI_AGAIN`), therefore Next.js build has not been verified. Check the first Vercel build logs.
