@@ -27,3 +27,6 @@ npm run dev
 
 ## Security
 Never use this frontend demo for real cash accounting or audit evidence. It is intentionally a workflow prototype; true identity, authorization, audit reliability and financial consistency require a server-side implementation.
+
+## POS status update
+New POS wizard submissions are saved as **Pending**, even with partial or zero payments. They are not included in finalized Sales until an explicit **Close Account** action, which requires full payment. This is only a browser-local prototype; server-side enforcement comes with the backend.

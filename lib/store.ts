@@ -1,6 +1,6 @@
 export type Status = 'Pending for Approval' | 'Approved' | 'Submit Explanation';
 export type LedgerEntry = { id: string; account:'Petty Cash'|'Funds'; kind:'Additional Funds'|'Expense'; amount:number; category:string; description:string; actor:string; createdAt:string; signature:string; status:Status; proof?:string; explanation?:string; reviewerNote?:string; events:{at:string;by:string;action:string}[] };
-export type PosEntry = {id:string; client:string; phone:string; vehicle:string; plate:string; concern:string; items:{name:string;qty:number;price:number}[]; payments:{amount:number;method:string;at:string}[]; costs:number; status:string; createdAt:string};
+export type PosEntry = {id:string; client:string; phone:string; vehicle:string; plate:string; concern:string; items:{name:string;qty:number;price:number}[]; payments:{amount:number;method:string;at:string}[]; costs:number; status:string; createdAt:string; closedAt?:string};
 export type Data = { transactions:LedgerEntry[]; pos:PosEntry[]; manualSales:{id:string;amount:number;description:string;createdAt:string}[] };
 export const emptyData:Data={transactions:[],pos:[],manualSales:[]};
 export function load():Data {try { const v=localStorage.getItem('cms-demo-v1'); return v?{...emptyData,...JSON.parse(v)}:emptyData } catch{return emptyData} }
