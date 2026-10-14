@@ -171,3 +171,19 @@ Changes in this update:
 **Known development limitations:** Full Next.js production build and live Supabase migration tests were not possible in the authoring environment because npm registry access was unavailable. In particular, test the migration on a staging Supabase copy first and verify multi-day EOD workflows, role-specific access, real cash payments in POS, existing correction flows, signing and QR proofs. Prior missed-EOD dates are checked from recent stored daily counts; extended closures, holidays, shift handovers, final receiver-signature enforcement, full POS payment receipt controls and financial reporting are not yet production-certified. Keep this as a development/test build.
 
 **v8 final amendments:** Friday turnover submission is limited to Cashiers on Friday after 4:00 PM Philippine Time. Any older BOD with no matching EOD is flagged for a missed-EOD IR, and BM can request a follow-up explanation. The current notification bell polls for open items every minute; it is not push delivery.
+
+## v9 — POS detail interactions and COGS
+
+Run `supabase/migration_009_pos_items.sql` **after migration 008**, on a staging database first. It adds itemized COGS and an auditable `pos_additional_transactions` table, plus restricted RPC functions. It does not wipe existing financial data.
+
+### Interface
+- POS, Sales, cash ledger and cash approvals rows open transaction details when clicked (keyboard Enter/Space on accessible rows). Action buttons inside rows do not accidentally open the row modal.
+- POS has compact quotation and COGS itemized entry. Additional transactions can be appended only to Pending POS through the POS detail popup, with their own quotation lines and COGS lines. The original POS entries remain recorded; audit logs record appended values.
+- No standalone Additional Services step during initial POS creation; Sales remains read-only.
+- Friday weekly Sales submission is locked before Friday. A missed prior-Friday task remains available for overdue filing.
+
+### Current development limitations
+- POS receipt photo enforcement, per-supplier COGS proof, and dedicated signature acknowledgment for appended POS items are **not** complete. Do not use this release for live financial custody without those controls.
+- `createPos` is followed by a second RPC to save itemized COGS. If the second RPC fails, the Pending POS may already exist, so check its record rather than resubmitting blindly. A single atomic RPC should replace this before production.
+- The migration's additional-POS access check currently allows the originating staff account and Admin/Super Admin; branch-specific enforcement of Admin access still needs end-to-end review.
+- Full `next build` has not been verified in this runtime; run it in Vercel and review deployment logs before use.
