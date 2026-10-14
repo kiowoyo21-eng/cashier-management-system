@@ -139,3 +139,15 @@ Historical rows with `branch_id IS NULL` will be hidden from ordinary branch sta
 5. **Reset caveat:** the implemented reset clears database transaction records, but does **not** delete Supabase Storage objects (receipt/signature images). DO NOT describe this as a complete storage wipe. Accounts, branches and database schema are preserved. A reset event remains in audit logs.
 6. EOD/turnover discrepancies, formal receiver signatures, robust weekly report delivery, and POS cash-drawer logic require additional live integration tests before production use.
 7. Build validation: run `npm install && npm run build` with network access; also test app login and migrations in staging before replacing a live deployment.
+
+## v7 — Cash Transaction Confirmation and Approved Corrections
+
+1. Upload the contents of this ZIP to the existing GitHub repository (do **not** overwrite existing Supabase data).
+2. In **Supabase SQL Editor**, run only `supabase/migration_007_corrections.sql` **after** migrations 001–006.
+3. Deploy on Vercel. No new environment variables are required.
+4. Test with **separate** Cashier and Admin/Super Admin accounts: submit signed Petty Cash transaction, request corrected amount/purpose, review approval, sign corrected amount, and verify only one net change to balance with an audit record. Repeat with a **Pending** POS quotation. Approval expires after 30 minutes. Requester cannot approve their own request.
+5. `Closed` POS accounts do not support direct quotation re-edit; a separate sales adjustment / refund workflow is required.
+
+The corrected amount, purpose, and account are visible in the correction interface. New Petty Cash/Funds transactions display amount as a number and in words on both the confirmation and signature screens with no projected balance displayed. POS payment entry prompts for confirmation. Admin dashboards no longer render the Cashier BOD/EOD task panel.
+
+**Not production-ready:** `npm run build` cannot be verified in the current packaging environment because registry.npmjs.org is unreachable. POS payment proof enforcement, full cross-branch authorization review, and closed-sale financial adjustment workflows remain to be completed/tested before real-money use. The review form for POS quotation changes uses an editable JSON item list in this build; replace it with an item-by-item form in a later UX polish pass.
