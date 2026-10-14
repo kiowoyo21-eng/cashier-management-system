@@ -151,3 +151,23 @@ Historical rows with `branch_id IS NULL` will be hidden from ordinary branch sta
 The corrected amount, purpose, and account are visible in the correction interface. New Petty Cash/Funds transactions display amount as a number and in words on both the confirmation and signature screens with no projected balance displayed. POS payment entry prompts for confirmation. Admin dashboards no longer render the Cashier BOD/EOD task panel.
 
 **Not production-ready:** `npm run build` cannot be verified in the current packaging environment because registry.npmjs.org is unreachable. POS payment proof enforcement, full cross-branch authorization review, and closed-sale financial adjustment workflows remain to be completed/tested before real-money use. The review form for POS quotation changes uses an editable JSON item list in this build; replace it with an item-by-item form in a later UX polish pass.
+
+## v8 — Cashier Tasks, IR, guards and notification update (October 2026)
+
+**Deployment order:** preserve your current Supabase database and users. On an installation already migrated through `migration_007_corrections.sql`, run **only** `supabase/migration_008_cashier_tasks_ir.sql` in the SQL Editor. Then upload the contents of this folder to the root of your existing GitHub repository and verify Vercel's deployment. Do **not** re-run `schema.sql` or reset production records.
+
+Changes in this update:
+- Dashboard **Cashier Tasks** panel with compact Petty Cash, Funds, Sales columns; only Cashier role sees action tasks.
+- Petty Cash and Funds BOD verification with 9:30 AM deadline, late IR, previous-day missed EOD IR, and automatic BOD mismatch IR to BM queue. A submitted IR does **not** require BM approval before continued access once BOD is recorded.
+- Daily EOD unlock at 4 PM; 6 PM overdue indicator. Next-day IR for missed EOD; per-account cash posting guard, including POS cash payments.
+- Friday Funds Turnover entry remains in Funds, with a Friday Dashboard task linking there. Weekly Sales review is due Friday 11:59 PM and has a confirmation/submission record; **sales entries are only produced by closed POS**.
+- BM Inbox loads missed EOD, late BOD and BOD discrepancy incidents. Branch-scoped BM; Admin and Super Admin read all branches.
+- Authenticated Cashier header shows the physical assigned branch; Admin/Super Admin show ALL BRANCHES.
+- In-app toast notification provider, header notification bell with periodic checks, pending action indicators and button loading states for the new flows.
+- Existing v7 amount-in-words confirmation, signed cash records, Request Correction approval, account-based audit, one-time phone camera QR and read-only Sales are retained.
+
+**Security and operations:** The Incident Report is a *report*, never an automatic financial adjustment. No real-data reset is performed by this migration. Backend checks control cash posting and BOD eligibility. Signatures/proof require authentication and a private Supabase Storage bucket. Notification bell is refreshed by polling, not real-time push.
+
+**Known development limitations:** Full Next.js production build and live Supabase migration tests were not possible in the authoring environment because npm registry access was unavailable. In particular, test the migration on a staging Supabase copy first and verify multi-day EOD workflows, role-specific access, real cash payments in POS, existing correction flows, signing and QR proofs. Prior missed-EOD dates are checked from recent stored daily counts; extended closures, holidays, shift handovers, final receiver-signature enforcement, full POS payment receipt controls and financial reporting are not yet production-certified. Keep this as a development/test build.
+
+**v8 final amendments:** Friday turnover submission is limited to Cashiers on Friday after 4:00 PM Philippine Time. Any older BOD with no matching EOD is flagged for a missed-EOD IR, and BM can request a follow-up explanation. The current notification bell polls for open items every minute; it is not push delivery.
