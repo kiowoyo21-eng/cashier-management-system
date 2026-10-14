@@ -9,12 +9,11 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.58.0",
-    "lucide-react": "^0.468.0",
     "next": "^15.5.0",
-    "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "lucide-react": "^0.468.0",
+    "qrcode.react": "^4.2.0"
   },
   "devDependencies": {
     "typescript": "^5.8.0",
