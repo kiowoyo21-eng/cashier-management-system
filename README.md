@@ -128,3 +128,14 @@ Historical rows with `branch_id IS NULL` will be hidden from ordinary branch sta
 - Formal liquidation submission workflow, scheduled Sunday exports/notifications, operational BOD gate on all transaction endpoints, and periodic EOD locks are not yet finished. Reports now show daily and Sunday-ending weekly groupings, but not automatic emailed/exported reports.
 - `branch_discrepancies` review actions must be fully wired to cashier re-explanation and BM escalation alerts. Current BM inbox shows and records review decisions; no email/push alerts.
 - Avoid using this version for actual cash custody until these checks and role policies are complete.
+
+
+## Daily task + test reset update (migration 006)
+
+1. Apply migrations 001-005 first, then execute `supabase/migration_006_tasks_reset.sql` ONCE in SQL Editor. Back up existing data before migrations.
+2. BOD and EOD tasks appear on Dashboard for each cash account. EOD unlocks at 16:00 Philippine Time, enforced by server-side SQL. BOD is required before signed Petty Cash / Funds movements. Mismatches are sent to Branch Manager and lock movements until acknowledged or resolved.
+3. Friday Funds Turnover lives inside Funds, with full-turnover default; a server-side Friday restriction remains. BM discrepancies appear in BM Inbox. Reports remain accessible under Reports.
+4. Settings > Reset Test Data is Super Admin-only. It is disabled by default. For a **separate staging Vercel environment**, set `ENABLE_TEST_RESET=true`; for production-mode Vercel deploys it additionally requires `ALLOW_PRODUCTION_TEST_RESET=true`, which is **not recommended**. Password reauthentication and typed `RESET TEST DATA` are mandatory.
+5. **Reset caveat:** the implemented reset clears database transaction records, but does **not** delete Supabase Storage objects (receipt/signature images). DO NOT describe this as a complete storage wipe. Accounts, branches and database schema are preserved. A reset event remains in audit logs.
+6. EOD/turnover discrepancies, formal receiver signatures, robust weekly report delivery, and POS cash-drawer logic require additional live integration tests before production use.
+7. Build validation: run `npm install && npm run build` with network access; also test app login and migrations in staging before replacing a live deployment.
