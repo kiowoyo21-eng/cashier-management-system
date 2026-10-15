@@ -154,3 +154,15 @@
 .pb-action-tile.threshold{background:#fff7d6;border-color:#e6bd54}
 .pb-action-tile.threshold .pb-action-icon{background:#f4cb55;color:#4f3900}
 @media(max-width:700px){.pb-balance-meta-simple{grid-template-columns:1fr}.pb-disbursement-alert{grid-template-columns:auto 1fr}.pb-disbursement-alert .btn{grid-column:1/-1;width:100%}}
+
+/* V7.4 receipt proof chooser */
+.receipt-proof-panel{margin-top:10px;border:1px solid #e8e4da;border-radius:13px;background:#fffdfa;padding:12px}
+.receipt-proof-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.receipt-proof-option{appearance:none;border:1px solid #e6e2d8;background:#fff;border-radius:11px;padding:11px;display:grid;grid-template-columns:32px minmax(0,1fr);gap:9px;text-align:left;align-items:center;color:#28251f;cursor:pointer}
+.receipt-proof-option:hover{border-color:#d7c985;background:#fffdf5}
+.receipt-proof-option>svg{color:#856600}
+.receipt-proof-option strong{display:block;font-size:11px}
+.receipt-proof-option small{display:block;margin-top:2px;color:var(--muted);font-size:9px;line-height:1.35}
+@media(max-width:760px){.receipt-proof-options{grid-template-columns:1fr}}
+.saved-signature-preview{border:1px solid #e7e3da;border-radius:12px;background:#fff;padding:12px}
+.saved-signature-preview img{display:block;width:100%;max-width:520px;height:130px;object-fit:contain;background:#fff;margin:0 auto 8px}
