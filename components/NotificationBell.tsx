@@ -13,20 +13,20 @@ export default function NotificationBell({role}:{role:string}){
   const {data:{user}}=await supabase.auth.getUser();if(!user)return;const notices:Notice[]=[];const clock=minuteOfDay();
   const {data:p}=await supabase.from('profiles').select('branch_id').eq('id',user.id).maybeSingle();
   if(role==='Cashier'&&p?.branch_id){
-   const [{data:counts},{data:handovers},{data:closures}]=await Promise.all([
+   const [{data:counts},{data:turnovers}]=await Promise.all([
     supabase.from('daily_cash_counts').select('cash_account,count_type').eq('branch_id',p.branch_id).eq('business_date',today()),
-    supabase.from('daily_sales_handovers').select('id').eq('branch_id',p.branch_id).eq('business_date',today()).limit(1),
-    supabase.from('cashier_shift_closures').select('id').eq('branch_id',p.branch_id).eq('business_date',today()).limit(1)
+    supabase.from('daily_sales_handovers').select('id').eq('branch_id',p.branch_id).eq('business_date',today()).limit(1)
    ]);
    const has=(account:string,type:string)=>(counts||[]).some(x=>x.cash_account===account&&x.count_type===type);
    for(const account of ['Sales','Petty Cash']){
     const label=account==='Petty Cash'?'Revolving Fund':'Sales';
     if(!has(account,'BOD'))notices.push({title:'Opening Cash Count Required',detail:`${label} — complete before using protected cashier operations`});
-    if(clock>=1010&&clock<1020&&!has(account,'EOD'))notices.push({title:'Closing Cash Count Required Soon',detail:`${label} — complete before 5:00 PM`});
-    if(clock>=1020&&!has(account,'EOD'))notices.push({title:'Closing Cash Count Required',detail:`${label} — complete the required closing task`});
    }
-   if(clock>=1020&&has('Sales','EOD')&&has('Petty Cash','EOD')&&!(handovers||[]).length)notices.push({title:'Daily Sales Handover Required',detail:'Complete today’s Sales handover before closing your cashier shift.'});
-   if(clock>=1020&&(handovers||[]).length&&!(closures||[]).length)notices.push({title:'Close Cashier Shift',detail:'Required closing tasks are complete. Finalize your cashier shift.'});
+   if(clock>=1010&&clock<1020&&!has('Petty Cash','EOD'))notices.push({title:'Revolving Fund Closing Cash Count Required Soon',detail:'Complete the Revolving Fund Closing Cash Count before 5:00 PM.'});
+   if(clock>=1010&&clock<1020&&!(turnovers||[]).length)notices.push({title:'Sales Turnover Required Soon',detail:'Complete today’s Sales Turnover before 5:00 PM.'});
+   if(clock>=1020&&!has('Petty Cash','EOD'))notices.push({title:'Revolving Fund Closing Cash Count Required',detail:'Complete the required Revolving Fund closing cash count.'});
+   if(clock>=1020&&!(turnovers||[]).length)notices.push({title:'Sales Turnover Required',detail:'Count and turn over today’s Sales collections.'});
+   if(has('Petty Cash','EOD')&&(turnovers||[]).length)notices.push({title:'Closing Tasks Complete',detail:'Revolving Fund Closing Cash Count and Sales Turnover are complete for today.'});
   }
   if(role==='PB'&&p?.branch_id){
    const {data}=await supabase.from('daily_cash_counts').select('cash_account,count_type').eq('branch_id',p.branch_id).eq('business_date',today()).eq('cash_account','Funds');

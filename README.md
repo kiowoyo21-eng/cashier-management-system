@@ -240,3 +240,16 @@ See `REVISION_CHECKLIST.md` for the full included feature checklist and deployme
 For an installation already migrated through `migration_013_role_scope_and_reporting.sql`, run `supabase/migration_014_plate_lookup_and_pos_polish.sql` once before deploying this source revision.
 
 This migration canonicalizes POS plate numbers to uppercase alphanumeric values (`ABC-1234`, `ABC 1234`, and `abc1234` all become `ABC1234`) and adds a lookup index. The POS UI now suggests existing plate histories, auto-fills available vehicle/client details, creates a separate new POS transaction, removes Checklist from the current cashier UI/export, and uses a more compact popup layout.
+
+## Sales Turnover closing-flow correction — migration 015
+
+For an installation already migrated through `migration_014_plate_lookup_and_pos_polish.sql`, run `supabase/migration_015_sales_turnover_closing_flow.sql` before deploying this source revision.
+
+This revision finalizes the Cashier end-of-day workflow:
+
+1. **Revolving Fund Closing Cash Count**
+2. **Sales Turnover**
+
+There is no standalone **Sales Closing Cash Count** and no separate **Close Cashier Shift** action. Sales Turnover now contains the actual Sales cash count being turned over, compares it with the expected Sales cash (Sales Opening Cash Count + closed cash Sales), requires the receiving person and Cashier signature, and records Short / Over directly in the turnover record.
+
+The 4:50 PM reminder and the notification bell now check only these two closing responsibilities. Weekly HR compliance likewise evaluates Sales + Revolving Fund Opening Cash Counts, the Revolving Fund Closing Cash Count, Sales Turnover, and incidents. Historical `daily_sales_handovers` and `cashier_shift_closures` database objects remain for backward compatibility; the current UI no longer creates shift-closure records.
