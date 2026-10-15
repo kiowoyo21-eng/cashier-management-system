@@ -1,12 +1,27 @@
--- CMS v21: separate one-page RFP Disbursement Report PDF and Receipts PDF.
+-- CMS v21 FIXED / IDEMPOTENT:
+-- Separate one-page RFP Disbursement Report PDF and Receipts PDF.
 -- Run AFTER migration_020_physical_rfp_branches.sql.
 BEGIN;
 
-ALTER TABLE public.rfp_disbursement_requests
-ADD COLUMN IF NOT EXISTS receipts_pdf_path text;
+-- Make this migration self-healing if an earlier approval migration was only partially applied.
+ALTER TABLE public.rfp_disbursement_requests ADD COLUMN IF NOT EXISTS beginning_balance numeric(14,2) NOT NULL DEFAULT 0;
+ALTER TABLE public.rfp_disbursement_requests ADD COLUMN IF NOT EXISTS remaining_balance numeric(14,2) NOT NULL DEFAULT 0;
+ALTER TABLE public.rfp_disbursement_requests ADD COLUMN IF NOT EXISTS check_deposit numeric(14,2) NOT NULL DEFAULT 0;
+ALTER TABLE public.rfp_disbursement_requests ADD COLUMN IF NOT EXISTS verified_by uuid REFERENCES public.profiles(id);
+ALTER TABLE public.rfp_disbursement_requests ADD COLUMN IF NOT EXISTS verified_signature_path text;
+ALTER TABLE public.rfp_disbursement_requests ADD COLUMN IF NOT EXISTS verified_at timestamptz;
+ALTER TABLE public.rfp_disbursement_requests ADD COLUMN IF NOT EXISTS approved_by uuid REFERENCES public.profiles(id);
+ALTER TABLE public.rfp_disbursement_requests ADD COLUMN IF NOT EXISTS approved_signature_path text;
+ALTER TABLE public.rfp_disbursement_requests ADD COLUMN IF NOT EXISTS approved_at timestamptz;
+ALTER TABLE public.rfp_disbursement_requests ADD COLUMN IF NOT EXISTS receipts_pdf_path text;
 
--- Older single-PDF submissions are retired so every new request carries both files.
-REVOKE EXECUTE ON FUNCTION public.submit_rfp_disbursement_request_v2(text,text[],text,text,numeric,text) FROM authenticated;
+-- Older single-PDF submissions are retired only if that old RPC actually exists.
+DO $$
+BEGIN
+  IF to_regprocedure('public.submit_rfp_disbursement_request_v2(text,text[],text,text,numeric,text)') IS NOT NULL THEN
+    EXECUTE 'REVOKE EXECUTE ON FUNCTION public.submit_rfp_disbursement_request_v2(text,text[],text,text,numeric,text) FROM authenticated';
+  END IF;
+END $$;
 
 CREATE OR REPLACE FUNCTION public.submit_rfp_disbursement_request_v3(
  p_id text,
@@ -34,7 +49,7 @@ BEGIN
  FROM public.profiles
  WHERE id=auth.uid() AND is_active=true;
 
- IF v_role NOT IN ('PB','Admin','Branch Manager','Super Admin') OR v_branch IS NULL THEN
+ IF v_role NOT IN ('PB','Admin','Branch Manager','Super Admin') THEN
   RAISE EXCEPTION 'PB or authorized management role required';
  END IF;
 
@@ -147,7 +162,7 @@ END $$;
 REVOKE ALL ON FUNCTION public.submit_rfp_disbursement_request_v3(text,text[],text,text,text,numeric,text) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.submit_rfp_disbursement_request_v3(text,text[],text,text,text,numeric,text) TO authenticated;
 
--- Accounting and President must be able to open both request documents.
+-- Accounting and President can open both request documents.
 DROP POLICY IF EXISTS evidence_read ON storage.objects;
 CREATE POLICY evidence_read ON storage.objects FOR SELECT TO authenticated USING(
  bucket_id='transaction-evidence' AND (
