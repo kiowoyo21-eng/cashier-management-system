@@ -28,12 +28,6 @@ export default function NotificationBell({role}:{role:string}){
    if(clock>=1020&&!(turnovers||[]).length)notices.push({title:'Sales Turnover Required',detail:'Count and turn over today’s Sales collections.'});
    if(has('Petty Cash','EOD')&&(turnovers||[]).length)notices.push({title:'Closing Tasks Complete',detail:'Revolving Fund Closing Cash Count and Sales Turnover are complete for today.'});
   }
-  if(role==='PB'&&p?.branch_id){
-   const {data}=await supabase.from('daily_cash_counts').select('cash_account,count_type').eq('branch_id',p.branch_id).eq('business_date',today()).eq('cash_account','Funds');
-   const has=(type:string)=>(data||[]).some(x=>x.count_type===type);
-   if(!has('BOD'))notices.push({title:'RFP Opening Cash Count Required',detail:'Complete the RFP Opening Cash Count before RFP activity.'});
-   if(clock>=1020&&!has('EOD'))notices.push({title:'RFP Closing Cash Count Required',detail:'Complete the RFP Closing Cash Count.'});
-  }
   if(['Branch Manager','Admin','Super Admin'].includes(role)){
    const {data}=await supabase.from('cash_incident_reports').select('incident_type,cash_account,status').eq('status','Pending BM Review').limit(20);
    for(const n of data||[])notices.push({title:String(n.incident_type).replace('Missed EOD','Missed Closing Cash Count').replace('Late BOD','Late Opening Cash Count').replace('BOD Discrepancy','Opening Cash Count Discrepancy').replace('Missed Turnover','Missed Friday RFP Handover'),detail:`${n.cash_account==='Petty Cash'?'Revolving Fund':n.cash_account==='Funds'?'RFP':n.cash_account} · Pending BM Review`});

@@ -173,3 +173,14 @@ For an existing database already through migration 011:
 - [x] Direct generic RFP replenishment is blocked server-side.
 - [x] Sidebar/navigation height is fixed to the viewport on desktop and scrolls independently from page content.
 - [x] New migration: `migration_016_rfp_disbursement_and_pb_dashboard.sql`.
+
+## V7 — PB RFP-only correction
+- [x] PB dashboard has no daily Opening/Closing Cash Count tasks.
+- [x] PB has no cash-count Incident Report action.
+- [x] PB RFP Activity is not gated by daily cash counts.
+- [x] PB notification bell has no RFP cash-count alerts.
+- [x] Legacy RFP Handover UI removed from PB workflow.
+- [x] Legacy RFP handover RPC revoked for authenticated users.
+- [x] PB transaction numbering limited to RFP expense + disbursement request.
+- [x] RFP expenses can be recorded without BOD/EOD cash counts.
+- [x] RFP disbursement/replenishment remains the PB financial workflow.

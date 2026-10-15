@@ -5,7 +5,7 @@ import {nextTransactionNumber,uploadImage} from '../lib/backend';
 import SignaturePad from './SignaturePad';
 import PhoneCameraLink from './PhoneCameraLink';
 import {useNotify} from './Notifications';
-import {FridayFundHandoverModal,countLabel,incidentLabel} from './CashControls';
+import {countLabel,incidentLabel} from './CashControls';
 
 export type Account='Sales'|'Petty Cash'|'Funds';
 type Count={cash_account:Account;count_type:'BOD'|'EOD';business_date:string;difference:number;expected?:number;actual?:number};
@@ -21,10 +21,10 @@ export function DailyTaskPanel(){
  const notify=useNotify();
  const [role,setRole]=useState('Cashier'),[branch,setBranch]=useState<string|null>(null),[busy,setBusy]=useState(true);
  const [counts,setCounts]=useState<Count[]>([]),[incidents,setIncidents]=useState<Incident[]>([]),[turnovers,setTurnovers]=useState<{business_date:string;cashier_id:string}[]>([]);
- const [chosen,setChosen]=useState<{account:Account;kind:'BOD'|'EOD'}|null>(null),[salesTurnover,setSalesTurnover]=useState(false),[rfpHandover,setRfpHandover]=useState(false),[incident,setIncident]=useState<{account:Account;type:'Missed EOD'|'Late BOD';day:string}|null>(null);
+ const [chosen,setChosen]=useState<{account:Account;kind:'BOD'|'EOD'}|null>(null),[salesTurnover,setSalesTurnover]=useState(false),[incident,setIncident]=useState<{account:Account;type:'Missed EOD'|'Late BOD';day:string}|null>(null);
  const reload=useCallback(async()=>{if(!supabase)return;setBusy(true);try{const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data:p,error}=await supabase.from('profiles').select('branch_id,role').eq('id',user.id).single();if(error)throw error;setBranch(p?.branch_id||null);setRole(p?.role||'Cashier');if(!p?.branch_id)return;const [a,b,c]=await Promise.all([supabase.from('daily_cash_counts').select('cash_account,count_type,business_date,difference,expected,actual').eq('branch_id',p.branch_id).order('business_date',{ascending:false}).limit(160),supabase.from('cash_incident_reports').select('id,cash_account,incident_type,business_date,status,review_note').eq('branch_id',p.branch_id).order('created_at',{ascending:false}).limit(100),supabase.from('daily_sales_handovers').select('business_date,cashier_id').eq('branch_id',p.branch_id).order('business_date',{ascending:false}).limit(60)]);if(a.error)throw a.error;if(b.error)throw b.error;if(c.error)throw c.error;setCounts((a.data||[]) as Count[]);setIncidents((b.data||[]) as Incident[]);setTurnovers(c.data||[])}catch(e){notify(e instanceof Error?e.message:'Unable to load daily tasks','error')}finally{setBusy(false)}},[notify]);
  useEffect(()=>{void reload();const t=setInterval(()=>void reload(),60000);return()=>clearInterval(t)},[reload]);
- const today=businessDay(),clock=phMinutes(),friday=ph().getDay()===5;
+ const today=businessDay(),clock=phMinutes();
  const countExists=(a:Account,k:'BOD'|'EOD',day=today)=>counts.some(r=>r.cash_account===a&&r.count_type===k&&r.business_date===day);
  const hasIR=(a:Account,type:string,day:string)=>incidents.some(r=>r.cash_account===a&&r.incident_type===type&&r.business_date===day);
  const previousOpening=(a:Account)=>a==='Sales'?undefined:counts.filter(c=>c.cash_account===a&&c.count_type==='BOD'&&c.business_date<today).find(c=>!countExists(a,'EOD',c.business_date)&&!hasIR(a,'Missed EOD',c.business_date))?.business_date;
@@ -32,7 +32,7 @@ export function DailyTaskPanel(){
  const salesTurnoverDone=turnovers.some(x=>x.business_date===today);
  const cashierAccounts:Account[]=['Sales','Petty Cash'];
  function countRow(a:Account,k:'BOD'|'EOD',closingLabel?:string){const done=countExists(a,k),unlock=k==='EOD'?clock>=960:true,needsPrev=Boolean(previousOpening(a)),late=k==='BOD'&&lateOpening(a);return <div className="task-row"><div><strong>{closingLabel||`${accountLabel(a)} ${countLabel(k)}`}</strong><div className="task-label">{done?'Completed':!unlock?'Available at 4:00 PM':late?'Late — incident report required':needsPrev?'Previous closing task requires an incident report':k==='BOD'?'Complete before cashier operations':'Required before end-of-day completion'}</div></div><button className={'btn '+((late||clock>=1020&&k==='EOD')&&!done?'danger':'ghost')} disabled={busy||done||!unlock||needsPrev||late} onClick={()=>setChosen({account:a,kind:k})}>{done?'Done':'Open'}</button></div>}
- if(role==='PB')return <section className="card" style={{marginBottom:18}}><div className="hrow between wrap"><div><h2>PB · RFP Tasks</h2><p className="muted small">RFP is managed by PB and authorized management only.</p></div><button className="btn ghost" onClick={()=>void reload()}>Refresh</button></div><div className="task-grid"><div className="task-card"><h3>RFP</h3>{countRow('Funds','BOD')}{countRow('Funds','EOD')}{friday&&<div className="task-row"><div><strong>Friday RFP Handover</strong><div className="task-label">{clock<960?'Available at 4:00 PM':'Complete the scheduled RFP handover'}</div></div><button className="btn ghost" disabled={clock<960||!countExists('Funds','BOD')} onClick={()=>setRfpHandover(true)}>Open Handover</button></div>}</div></div>{chosen&&<CountModal task={chosen} onClose={()=>setChosen(null)} onDone={()=>{setChosen(null);void reload()}}/>}<FridayFundHandoverModal open={rfpHandover} onClose={()=>setRfpHandover(false)} onDone={()=>void reload()}/></section>;
+ if(role==='PB')return null;
  if(role!=='Cashier')return null;
  const rfClosingDone=countExists('Petty Cash','EOD');
  const closingComplete=rfClosingDone&&salesTurnoverDone;
