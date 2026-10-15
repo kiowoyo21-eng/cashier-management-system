@@ -45,5 +45,5 @@ export function VehicleFields({value,onChange,allowAdd=true,preserveModelOnBrand
 }
 
 export function VehicleFilterBar({value,onChange,onClear}:{value:VehicleSelection;onChange:(v:VehicleSelection)=>void;onClear:()=>void}){
- return <div className="vehicle-filter-card"><div className="hrow between wrap"><div><strong>Vehicle Filters</strong><div className="small muted">Each field is optional. Filled fields are combined; blank fields are ignored.</div></div><button className="btn ghost" onClick={onClear}>Clear Vehicle Filters</button></div><VehicleFields value={value} onChange={onChange} preserveModelOnBrandChange/></div>
+ return <div className="vehicle-filter-inline"><VehicleFields value={value} onChange={onChange} preserveModelOnBrandChange/><button className="btn ghost vehicle-filter-clear" onClick={onClear}>Clear Filters</button></div>
 }

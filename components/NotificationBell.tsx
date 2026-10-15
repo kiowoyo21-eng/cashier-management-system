@@ -13,17 +13,30 @@ export default function NotificationBell({role}:{role:string}){
   const {data:{user}}=await supabase.auth.getUser();if(!user)return;const notices:Notice[]=[];const clock=minuteOfDay();
   const {data:p}=await supabase.from('profiles').select('branch_id').eq('id',user.id).maybeSingle();
   if(role==='Cashier'&&p?.branch_id){
-   const {data}=await supabase.from('daily_cash_counts').select('cash_account,count_type').eq('branch_id',p.branch_id).eq('business_date',today());
-   const has=(account:string,type:string)=>(data||[]).some(x=>x.cash_account===account&&x.count_type===type);
-   for(const account of ['Petty Cash','Funds']){
-    if(!has(account,'BOD'))notices.push({title:'Opening Cash Count Required',detail:`${account} — complete before using cashier operations`});
-    if(clock>=1010&&clock<1020&&!has(account,'EOD'))notices.push({title:'Closing Cash Count Required Soon',detail:`${account} — closing becomes mandatory at 5:00 PM`});
-    if(clock>=1020&&!has(account,'EOD'))notices.push({title:'Closing Cash Count Required',detail:`${account} — complete the cash count to continue`});
+   const [{data:counts},{data:handovers},{data:closures}]=await Promise.all([
+    supabase.from('daily_cash_counts').select('cash_account,count_type').eq('branch_id',p.branch_id).eq('business_date',today()),
+    supabase.from('daily_sales_handovers').select('id').eq('branch_id',p.branch_id).eq('business_date',today()).limit(1),
+    supabase.from('cashier_shift_closures').select('id').eq('branch_id',p.branch_id).eq('business_date',today()).limit(1)
+   ]);
+   const has=(account:string,type:string)=>(counts||[]).some(x=>x.cash_account===account&&x.count_type===type);
+   for(const account of ['Sales','Petty Cash']){
+    const label=account==='Petty Cash'?'Revolving Fund':'Sales';
+    if(!has(account,'BOD'))notices.push({title:'Opening Cash Count Required',detail:`${label} — complete before using protected cashier operations`});
+    if(clock>=1010&&clock<1020&&!has(account,'EOD'))notices.push({title:'Closing Cash Count Required Soon',detail:`${label} — complete before 5:00 PM`});
+    if(clock>=1020&&!has(account,'EOD'))notices.push({title:'Closing Cash Count Required',detail:`${label} — complete the required closing task`});
    }
+   if(clock>=1020&&has('Sales','EOD')&&has('Petty Cash','EOD')&&!(handovers||[]).length)notices.push({title:'Daily Sales Handover Required',detail:'Complete today’s Sales handover before closing your cashier shift.'});
+   if(clock>=1020&&(handovers||[]).length&&!(closures||[]).length)notices.push({title:'Close Cashier Shift',detail:'Required closing tasks are complete. Finalize your cashier shift.'});
+  }
+  if(role==='PB'&&p?.branch_id){
+   const {data}=await supabase.from('daily_cash_counts').select('cash_account,count_type').eq('branch_id',p.branch_id).eq('business_date',today()).eq('cash_account','Funds');
+   const has=(type:string)=>(data||[]).some(x=>x.count_type===type);
+   if(!has('BOD'))notices.push({title:'RFP Opening Cash Count Required',detail:'Complete the RFP Opening Cash Count before RFP activity.'});
+   if(clock>=1020&&!has('EOD'))notices.push({title:'RFP Closing Cash Count Required',detail:'Complete the RFP Closing Cash Count.'});
   }
   if(['Branch Manager','Admin','Super Admin'].includes(role)){
    const {data}=await supabase.from('cash_incident_reports').select('incident_type,cash_account,status').eq('status','Pending BM Review').limit(20);
-   for(const n of data||[])notices.push({title:String(n.incident_type).replace('Missed EOD','Missed Closing Cash Count').replace('Late BOD','Late Opening Cash Count').replace('BOD Discrepancy','Opening Cash Count Discrepancy').replace('Missed Turnover','Missed Friday Fund Handover'),detail:`${n.cash_account} · Pending BM Review`});
+   for(const n of data||[])notices.push({title:String(n.incident_type).replace('Missed EOD','Missed Closing Cash Count').replace('Late BOD','Late Opening Cash Count').replace('BOD Discrepancy','Opening Cash Count Discrepancy').replace('Missed Turnover','Missed Friday RFP Handover'),detail:`${n.cash_account==='Petty Cash'?'Revolving Fund':n.cash_account==='Funds'?'RFP':n.cash_account} · Pending BM Review`});
   }
   if(alive)setItems(notices);
  }catch{}finally{if(alive)setLoading(false)}}void load();const id=setInterval(()=>void load(),60000);return()=>{alive=false;clearInterval(id)}},[role]);

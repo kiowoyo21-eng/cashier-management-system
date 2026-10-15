@@ -223,3 +223,14 @@ For an installation already migrated through `migration_010_workflow_revision.sq
 This revision adds the 4:50 PM Closing Cash Count reminder and 5:00 PM required-task gate, strict POS payment/reference validation, required Service/Part quotation types, compact quotation quantity/price controls, modal-only Petty Cash/Fund reports, Create Another Transaction for closed POS/Sales, compact Sales Details, fading notifications, and removes Suppliers from the Cashier role while retaining it for authorized management roles.
 
 Legacy database values such as `BOD`, `EOD`, `Additional Funds`, and `fund_turnovers` remain internal compatibility identifiers. Do not rename them manually.
+
+## Master role / Sales / Revolving Fund revision — migrations 012 and 013
+
+For an existing installation already through migration 011, run these migrations **in order** on a staging Supabase copy before deploying this source:
+
+1. `supabase/migration_012_master_revision.sql`
+2. `supabase/migration_013_role_scope_and_reporting.sql`
+
+Migration 012 adds the Cashier/PB/HR role separation, first-login password requirement, sequential transaction references, detailed Revolving Fund activity fields, detailed Sales workbook fields, Daily Sales Handover, shift closure, and weekly compliance data access. Migration 013 hardens server-side role boundaries so Cashier is limited to Sales + Revolving Fund, PB is limited to RFP, HR remains reporting-only, supplier writes are management-only, and operational transaction prefixes are validated.
+
+See `REVISION_CHECKLIST.md` for the full included feature checklist and deployment notes.
