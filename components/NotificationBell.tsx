@@ -12,6 +12,11 @@ export default function NotificationBell({role}:{role:string}){
  useEffect(()=>{let alive=true;async function load(){if(!supabase)return;try{
   const {data:{user}}=await supabase.auth.getUser();if(!user)return;const notices:Notice[]=[];const clock=minuteOfDay();
   const {data:p}=await supabase.from('profiles').select('branch_id').eq('id',user.id).maybeSingle();
+  if(role==='PB'&&p?.branch_id){
+   const {data:rfp}=await supabase.from('cash_transactions').select('kind,amount,created_at').eq('account','Funds').eq('branch_id',p.branch_id).order('created_at',{ascending:false}).limit(500);
+   const rows=rfp||[];const latestRep=rows.find((x:any)=>x.kind==='Additional Funds');const pending=rows.filter((x:any)=>x.kind==='Expense'&&(!latestRep||new Date(x.created_at)>new Date(latestRep.created_at))).reduce((n:number,x:any)=>n+Number(x.amount||0),0);
+   if(pending>=50000)notices.push({title:'RFP Disbursement Required',detail:`Unreimbursed RFP expenses reached ₱${pending.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2})}. Prepare the disbursement request and supporting PDF.`});
+  }
   if(role==='Cashier'&&p?.branch_id){
    const [{data:counts},{data:turnovers}]=await Promise.all([
     supabase.from('daily_cash_counts').select('cash_account,count_type').eq('branch_id',p.branch_id).eq('business_date',today()),

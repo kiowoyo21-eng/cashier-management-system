@@ -143,3 +143,14 @@
 .pb-empty-activity span{font-size:10px}
 @media(max-width:1050px){.pb-dashboard-top,.pb-dashboard-bottom{grid-template-columns:1fr}.pb-task-flow{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.pb-pagehead{align-items:flex-start}.pb-scope-pill{display:none}.pb-balance-value{font-size:34px}.pb-balance-meta,.quick-action-grid.pb-quick-actions{grid-template-columns:1fr}.pb-task-flow{grid-template-columns:1fr}.pb-task-status{align-items:flex-start;flex-direction:column}.pb-task-status .btn{width:100%}}
+
+/* V7.3: simplified PB balance + RFP disbursement threshold */
+.pb-balance-meta-simple{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pb-disbursement-alert{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px;border:1px solid #f0c55c;background:#fff7d6;color:#5f4500;border-radius:12px;padding:12px 13px;margin:16px 0 2px}
+.pb-disbursement-alert>svg{color:#a86e00}
+.pb-disbursement-alert strong{display:block;font-size:12px}
+.pb-disbursement-alert span{display:block;font-size:10px;line-height:1.45;margin-top:2px;color:#7a611b}
+.pb-disbursement-alert .btn{white-space:nowrap;padding:8px 11px}
+.pb-action-tile.threshold{background:#fff7d6;border-color:#e6bd54}
+.pb-action-tile.threshold .pb-action-icon{background:#f4cb55;color:#4f3900}
+@media(max-width:700px){.pb-balance-meta-simple{grid-template-columns:1fr}.pb-disbursement-alert{grid-template-columns:auto 1fr}.pb-disbursement-alert .btn{grid-column:1/-1;width:100%}}
