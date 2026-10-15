@@ -166,3 +166,10 @@
 @media(max-width:760px){.receipt-proof-options{grid-template-columns:1fr}}
 .saved-signature-preview{border:1px solid #e7e3da;border-radius:12px;background:#fff;padding:12px}
 .saved-signature-preview img{display:block;width:100%;max-width:520px;height:130px;object-fit:contain;background:#fff;margin:0 auto 8px}
+
+/* V7.7 RFP disbursement clarity */
+.rfp-branch-summary{margin:14px 0;border:1px solid var(--border);border-radius:14px;padding:14px;background:#fcfbf7}
+.rfp-branch-summary h3{margin:0 0 8px;font-size:14px}
+.rfp-covered-table table{min-width:1120px}
+.rfp-covered-table td,.rfp-covered-table th{vertical-align:top}
+@media(max-width:720px){.rfp-request-modal .review-grid{grid-template-columns:1fr 1fr}.rfp-covered-table{overflow:auto}}

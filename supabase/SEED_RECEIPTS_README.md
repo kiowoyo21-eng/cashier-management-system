@@ -20,3 +20,7 @@ V7.6 fixes that by uploading to:
 6. Open **Prepare RFP Disbursement**. All five expense receipts should show **Attached**, and PDF generation should be enabled.
 
 Do not use this demo seed in production.
+
+
+## V7.7
+After migration 019, the demo SQL seeds only Part/Supply RFP expenses and distributes the sample rows across available branches for branch-summary PDF testing.

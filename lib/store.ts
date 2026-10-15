@@ -1,6 +1,6 @@
 export type Status = 'Pending for Approval' | 'Approved' | 'Submit Explanation';
 export type CashAccount='Petty Cash'|'Funds';
-export type LedgerEntry = { id: string; account:CashAccount; kind:'Additional Funds'|'Expense'; amount:number; category:string; description:string; actor:string; createdAt:string; signature:string; status:Status; proof?:string; explanation?:string; reviewerNote?:string; transactionDate?:string; payee?:string; vatType?:'VAT'|'Non-VAT'|''; cashVoucherNo?:string; receiptNo?:string; tinNo?:string; notes?:string; events:{at:string;by:string;action:string}[] };
+export type LedgerEntry = { id: string; account:CashAccount; kind:'Additional Funds'|'Expense'; amount:number; category:string; description:string; actor:string; createdAt:string; signature:string; status:Status; proof?:string; explanation?:string; reviewerNote?:string; transactionDate?:string; payee?:string; vatType?:'VAT'|'Non-VAT'|''; cashVoucherNo?:string; receiptNo?:string; tinNo?:string; notes?:string; vehicleUnit?:string; plateNumber?:string; quantity?:number; unitCost?:number; branchId?:string; branchName?:string; events:{at:string;by:string;action:string}[] };
 export type QuoteItem={type:'Service'|'Part';name:string;qty:number;price:number};
 export type PosPayment={amount:number;method:string;at:string;reference?:string;cardType?:string;terminalFee?:number};
 export type PosEntry = {
