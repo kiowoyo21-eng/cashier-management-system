@@ -155,3 +155,21 @@ For an existing database already through migration 011:
 - [x] Close Cashier Shift is retired from the current UI and RPC access.
 - [x] Notification bell and 4:50 PM reminder use the final two-task closing workflow.
 - [x] Weekly HR compliance report no longer requires Shift Closure or Sales EOD count.
+
+## V6 — PB RFP Dashboard & Disbursement PDF Workflow
+- [x] PB gets a separate dashboard layout from Cashier.
+- [x] RFP Balance is the primary left-side PB dashboard card.
+- [x] RFP task area is placed on the right side of the PB dashboard.
+- [x] PB Quick Actions and Recent Activity are placed below the top dashboard row.
+- [x] Replenish RFP is replaced by Prepare RFP Disbursement.
+- [x] RFP disbursement compiles unreimbursed RFP expense transaction numbers.
+- [x] Every covered RFP expense must have receipt proof before request submission.
+- [x] Supporting PDF is generated with request summary, transaction numbers, and receipt images.
+- [x] Generated PDF is stored privately in Supabase evidence storage.
+- [x] PB signature is required before submitting the disbursement request.
+- [x] Management review supports Pending → Approved → Released, with rejection support.
+- [x] RFP replenishment is posted only after an approved disbursement request is released.
+- [x] Covered expense records cannot be reimbursed twice.
+- [x] Direct generic RFP replenishment is blocked server-side.
+- [x] Sidebar/navigation height is fixed to the viewport on desktop and scrolls independently from page content.
+- [x] New migration: `migration_016_rfp_disbursement_and_pb_dashboard.sql`.
