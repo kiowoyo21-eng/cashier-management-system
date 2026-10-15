@@ -230,6 +230,7 @@ USING(
 
 DROP POLICY IF EXISTS rfp_handover_read ON public.fund_turnovers;
 DROP POLICY IF EXISTS turnover_read ON public.fund_turnovers;
+DROP POLICY IF EXISTS rfp_legacy_handover_management_read ON public.fund_turnovers;
 CREATE POLICY rfp_legacy_handover_management_read
 ON public.fund_turnovers
 FOR SELECT TO authenticated
