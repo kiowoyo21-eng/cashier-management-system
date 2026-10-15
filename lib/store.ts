@@ -6,7 +6,7 @@ export type PosPayment={amount:number;method:string;at:string;reference?:string;
 export type PosEntry = {
  id:string; client:string; phone:string; vehicle:string; vehicleYear?:string; vehicleBrand?:string; vehicleModel?:string; plate:string; concern:string;
  items:QuoteItem[]; payments:PosPayment[]; costs:number; cogsItems?:{name:string;supplier:string;qty:number;unitCost:number}[]; status:string; createdAt:string; closedAt?:string;
- bsSi?:string; customerTin?:string; address?:string; mileage?:string; platform?:string; serviceAdvisor?:string; bookedBy?:string; mechanic?:string; checklistCompleted?:boolean; remarks?:string;
+ bsSi?:string; customerTin?:string; address?:string; mileage?:string; platform?:string; serviceAdvisor?:string; bookedBy?:string; mechanic?:string; remarks?:string;
  onlineExpense?:number; rfExpense?:number;
 };
 export type Data = { transactions:LedgerEntry[]; pos:PosEntry[]; manualSales:{id:string;amount:number;description:string;createdAt:string}[] };

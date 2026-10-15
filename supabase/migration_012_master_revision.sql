@@ -407,7 +407,7 @@ GRANT EXECUTE ON FUNCTION private.is_hr() TO authenticated;
 DROP POLICY IF EXISTS counts_read ON public.daily_cash_counts;
 CREATE POLICY counts_read ON public.daily_cash_counts FOR SELECT TO authenticated USING(private.is_admin() OR private.is_hr() OR branch_id=private.my_branch());
 DROP POLICY IF EXISTS incidents_read ON public.cash_incident_reports;
-CREATE POLICY incidents_read ON public.cash_incident_reports FOR SELECT TO authenticated USING(private.is_admin() OR private.is_hr() OR branch_id=private.my_branch() OR cashier_id=auth.uid());
+CREATE POLICY incidents_read ON public.cash_incident_reports FOR SELECT TO authenticated USING(private.is_admin() OR private.is_hr() OR branch_id=private.my_branch() OR actor_id=auth.uid());
 DROP POLICY IF EXISTS daily_sales_handover_read ON public.daily_sales_handovers;
 CREATE POLICY daily_sales_handover_read ON public.daily_sales_handovers FOR SELECT TO authenticated USING(private.is_admin() OR private.is_hr() OR branch_id=private.my_branch() OR cashier_id=auth.uid());
 DROP POLICY IF EXISTS shift_closure_read ON public.cashier_shift_closures;

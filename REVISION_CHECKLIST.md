@@ -129,3 +129,15 @@ For an existing database already through migration 011:
 - TypeScript/TSX syntax/transpile audit: required before packaging and recorded in the delivery message.
 - ZIP integrity: required before delivery.
 - Full `next build`: must still be run in a network-enabled staging/deployment environment because project npm dependencies are not installed in the authoring runtime.
+
+## V4 — Plate-linked POS + UI polish
+- [x] Plate Number input is uppercase alphanumeric only; spaces/dashes/symbols are ignored.
+- [x] Existing plate suggestions are generated from previous POS history.
+- [x] Selecting an existing plate auto-fills Year, Brand, Model, Client, Contact Number, Customer TIN, Address, and BS/SI when available.
+- [x] Matched vehicles remain linked by canonical plate while every new POS keeps its own transaction number.
+- [x] POS search also matches normalized plates regardless of spaces/dashes in the search text.
+- [x] Checklist field removed from POS entry, Sales Details, and Sales CSV export UI.
+- [x] POS popup redesigned into compact Vehicle Lookup, Customer Details, and Vehicle & Job Details cards.
+- [x] Existing vehicle match is visibly identified in the POS popup.
+- [x] Manual Cash Count submission button now remains disabled until a signature is present.
+- [x] Migration 014 normalizes historical and future POS plate values at database level.

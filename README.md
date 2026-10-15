@@ -234,3 +234,9 @@ For an existing installation already through migration 011, run these migrations
 Migration 012 adds the Cashier/PB/HR role separation, first-login password requirement, sequential transaction references, detailed Revolving Fund activity fields, detailed Sales workbook fields, Daily Sales Handover, shift closure, and weekly compliance data access. Migration 013 hardens server-side role boundaries so Cashier is limited to Sales + Revolving Fund, PB is limited to RFP, HR remains reporting-only, supplier writes are management-only, and operational transaction prefixes are validated.
 
 See `REVISION_CHECKLIST.md` for the full included feature checklist and deployment notes.
+
+## Plate-linked POS revision — migration 014
+
+For an installation already migrated through `migration_013_role_scope_and_reporting.sql`, run `supabase/migration_014_plate_lookup_and_pos_polish.sql` once before deploying this source revision.
+
+This migration canonicalizes POS plate numbers to uppercase alphanumeric values (`ABC-1234`, `ABC 1234`, and `abc1234` all become `ABC1234`) and adds a lookup index. The POS UI now suggests existing plate histories, auto-fills available vehicle/client details, creates a separate new POS transaction, removes Checklist from the current cashier UI/export, and uses a more compact popup layout.

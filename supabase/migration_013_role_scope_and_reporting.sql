@@ -190,7 +190,7 @@ CREATE POLICY incidents_read ON public.cash_incident_reports FOR SELECT TO authe
  private.is_admin()
  OR private.is_hr()
  OR (private.my_role()='Branch Manager' AND branch_id=private.my_branch())
- OR (cashier_id=auth.uid() AND (
+ OR (actor_id=auth.uid() AND (
       (private.my_role()='Cashier' AND cash_account IN ('Sales','Petty Cash'))
       OR (private.my_role()='PB' AND cash_account='Funds')
  ))
