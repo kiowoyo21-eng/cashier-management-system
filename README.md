@@ -187,3 +187,31 @@ Run `supabase/migration_009_pos_items.sql` **after migration 008**, on a staging
 - `createPos` is followed by a second RPC to save itemized COGS. If the second RPC fails, the Pending POS may already exist, so check its record rather than resubmitting blindly. A single atomic RPC should replace this before production.
 - The migration's additional-POS access check currently allows the originating staff account and Admin/Super Admin; branch-specific enforcement of Admin access still needs end-to-end review.
 - Full `next build` has not been verified in this runtime; run it in Vercel and review deployment logs before use.
+
+## Workflow revision — migration 010 (current release)
+
+This source revision keeps the legacy database values `BOD`, `EOD`, `Additional Funds`, and the existing `fund_turnovers` table for backward compatibility, but the operational UI now uses clear terminology such as **Opening Cash Count**, **Closing Cash Count**, **Replenishment**, **Expense**, and **Friday Fund Handover**.
+
+For an existing installation already migrated through `migration_009_pos_items.sql`:
+
+1. Back up the Supabase database and test on staging first.
+2. Run **`supabase/migration_010_workflow_revision.sql` once** in the Supabase SQL Editor.
+3. Deploy this updated source to Vercel/GitHub.
+4. Verify role access, cash-count tasks, Friday Fund Handover, POS creation/filtering, supplier access, and vehicle master data before production use.
+
+### Included in this revision
+
+- Friday Fund Handover is a scheduled **popup/modal task** instead of a permanent Funds-page form. A local Save Draft option is available before submission.
+- Fund activity uses two clear actions: **Replenish Fund** and **Record Expense**. Sales cash remains generated from POS and is not treated as a manual fund replenishment.
+- Fund activity is compiled into **Handover Periods**. Each historical period can be viewed and exported to CSV; the latest period remains Open until the next handover.
+- Petty Cash has automatic **Monthly Reports** plus **Custom Date Range** reports, with View Details and CSV export.
+- POS/Sales/Fund activity tables are chronological by the appropriate business timestamp and use pagination where appropriate. Closed Sales are ordered by `closed_at`, newest first.
+- POS includes optional independent autocomplete filters for **Year Model**, **Car Brand**, and **Car Model / Unit**, plus general customer/plate/reference search.
+- Missing vehicle values can be added from autocomplete. Migration 010 normalizes values so case/extra spaces do not create duplicate brands/years/models; models are unique within a brand.
+- Authorized management roles have a **Vehicle Master Data** screen for Brands, Models/Units, and Years, including rename/edit and deactivate/activate actions.
+- A branch-scoped **Suppliers** directory is included for parts/COGS/restocking coordination.
+- Recent cash-count records and review queues use pagination to avoid long unbounded tables.
+
+### Database compatibility note
+
+Do not rename legacy database codes or tables manually. `BOD`/`EOD` and `fund_turnovers` remain internal identifiers used by earlier migrations and RPCs. Migration 010 changes the user-facing terminology while preserving existing records and compatibility.
