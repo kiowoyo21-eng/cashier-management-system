@@ -1,4 +1,4 @@
-# Seed RFP Receipts (V7.6)
+# Seed RFP Receipts (V7.9)
 
 Development/staging only.
 
@@ -17,10 +17,18 @@ V7.6 fixes that by uploading to:
 3. Run `npm run seed:receipts`.
 4. Run `supabase/seed_001_rfp_pb_demo.sql` in Supabase SQL Editor.
 5. Refresh/login again as that same PB account.
-6. Open **Prepare RFP Disbursement**. All five expense receipts should show **Attached**, and PDF generation should be enabled.
+6. Open **Prepare RFP Disbursement**. All five expense receipts should show **Attached**.
+7. Generate the **Disbursement Report PDF** and the separate **Receipts PDF**.
 
 Do not use this demo seed in production.
 
 
-## V7.7
-After migration 019, the demo SQL seeds only Part/Supply RFP expenses and distributes the sample rows across available branches for branch-summary PDF testing.
+## V7.9
+The demo SQL seeds only Part/Supply RFP expenses and intentionally distributes them across all four physical branches:
+
+- Mastermind Mandaluyong
+- Underchargers Mandaluyong
+- Underchargers Las Piñas
+- Underchargers Quezon City
+
+The five sample expense rows still total PHP 50,000 so the disbursement threshold alert can be tested. The formal report is generated as a one-page summary; receipt images are generated into a separate PDF.
