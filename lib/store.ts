@@ -1,6 +1,8 @@
 export type Status = 'Pending for Approval' | 'Approved' | 'Submit Explanation';
 export type LedgerEntry = { id: string; account:'Petty Cash'|'Funds'; kind:'Additional Funds'|'Expense'; amount:number; category:string; description:string; actor:string; createdAt:string; signature:string; status:Status; proof?:string; explanation?:string; reviewerNote?:string; events:{at:string;by:string;action:string}[] };
-export type PosEntry = {id:string; client:string; phone:string; vehicle:string; vehicleYear?:string; vehicleBrand?:string; vehicleModel?:string; plate:string; concern:string; items:{name:string;qty:number;price:number}[]; payments:{amount:number;method:string;at:string}[]; costs:number; cogsItems?:{name:string;supplier:string;qty:number;unitCost:number}[]; status:string; createdAt:string; closedAt?:string};
+export type QuoteItem={type:'Service'|'Part';name:string;qty:number;price:number};
+export type PosPayment={amount:number;method:string;at:string;reference?:string};
+export type PosEntry = {id:string; client:string; phone:string; vehicle:string; vehicleYear?:string; vehicleBrand?:string; vehicleModel?:string; plate:string; concern:string; items:QuoteItem[]; payments:PosPayment[]; costs:number; cogsItems?:{name:string;supplier:string;qty:number;unitCost:number}[]; status:string; createdAt:string; closedAt?:string};
 export type Data = { transactions:LedgerEntry[]; pos:PosEntry[]; manualSales:{id:string;amount:number;description:string;createdAt:string}[] };
 export const emptyData:Data={transactions:[],pos:[],manualSales:[]};
 export function load():Data {try { const v=localStorage.getItem('cms-demo-v1'); return v?{...emptyData,...JSON.parse(v)}:emptyData } catch{return emptyData} }

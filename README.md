@@ -215,3 +215,11 @@ For an existing installation already migrated through `migration_009_pos_items.s
 ### Database compatibility note
 
 Do not rename legacy database codes or tables manually. `BOD`/`EOD` and `fund_turnovers` remain internal identifiers used by earlier migrations and RPCs. Migration 010 changes the user-facing terminology while preserving existing records and compatibility.
+
+## Cashier workflow polish — migration 011
+
+For an installation already migrated through `migration_010_workflow_revision.sql`, run **`supabase/migration_011_cashier_workflow_polish.sql` once** before deploying this source revision.
+
+This revision adds the 4:50 PM Closing Cash Count reminder and 5:00 PM required-task gate, strict POS payment/reference validation, required Service/Part quotation types, compact quotation quantity/price controls, modal-only Petty Cash/Fund reports, Create Another Transaction for closed POS/Sales, compact Sales Details, fading notifications, and removes Suppliers from the Cashier role while retaining it for authorized management roles.
+
+Legacy database values such as `BOD`, `EOD`, `Additional Funds`, and `fund_turnovers` remain internal compatibility identifiers. Do not rename them manually.
