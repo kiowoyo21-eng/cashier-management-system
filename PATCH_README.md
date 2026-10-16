@@ -1,3 +1,9 @@
+# CMS Review Revisions 001–005
+
+See **REVISION_026_README.md** for installation instructions and testing checklist. The updated code requires `supabase/migration_026_review_fixes.sql` on the matching Supabase project.
+
+Original v14 patch notes (historical):
+
 # CMS v14 PATCH ONLY
 
 Apply these files over **v12 plus v13 patch**. Includes all v13 patch files unchanged except app/page.tsx, and adds components/RfpEditRequests.tsx.
