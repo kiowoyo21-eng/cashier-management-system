@@ -26,10 +26,32 @@ function AutoBox({label,value,placeholder,options,onChange,onAdd,canAdd=true}:{l
 }
 
 export function useVehicleMaster(){
- const [brands,setBrands]=useState<Brand[]>([]),[models,setModels]=useState<Model[]>([]),[years,setYears]=useState<number[]>([]),[loading,setLoading]=useState(false);
- const reload=useCallback(async()=>{if(!supabase)return;setLoading(true);try{const [b,m,y]=await Promise.all([supabase.from('vehicle_brands').select('id,name').eq('is_active',true).order('name'),supabase.from('vehicle_models').select('id,name,brand_id').eq('is_active',true).order('name'),supabase.from('vehicle_years').select('year').eq('is_active',true).order('year',{ascending:false})]);if(b.error)throw b.error;if(m.error)throw m.error;if(y.error)throw y.error;const activeBrands=(b.data||[]) as Brand[];const activeIds=new Set(activeBrands.map(x=>x.id));setBrands(activeBrands);setModels(((m.data||[]) as Model[]).filter(x=>activeIds.has(x.brand_id)));setYears((y.data||[]).map((x:any)=>Number(x.year)))}catch{setBrands([]);setModels([]);setYears([])}finally{setLoading(false)}},[]);
+ const [brands,setBrands]=useState<Brand[]>([]),[models,setModels]=useState<Model[]>([]),[years,setYears]=useState<number[]>([]),[loading,setLoading]=useState(false),[loadError,setLoadError]=useState('');
+ const reload=useCallback(async()=>{
+  if(!supabase)return;
+  setLoading(true);setLoadError('');
+  try{
+   // Supabase's PostgREST API often caps each response at 1,000 rows. The seed
+   // has 1,299+ model rows, so load them in deterministic pages.
+   const loadAllModels=async():Promise<Model[]>=>{
+    const result:Model[]=[];const batch=500;
+    for(let offset=0;offset<50000;offset+=batch){
+     const {data,error}=await supabase!.from('vehicle_models').select('id,name,brand_id').eq('is_active',true).order('name').order('id').range(offset,offset+batch-1);
+     if(error)throw error;
+     const page=(data||[]) as Model[];result.push(...page);
+     if(page.length<batch)return result;
+    }
+    throw new Error('Too many vehicle models. Narrow the catalog or increase the pagination limit.');
+   };
+   const [b,m,y]=await Promise.all([supabase.from('vehicle_brands').select('id,name').eq('is_active',true).order('name'),loadAllModels(),supabase.from('vehicle_years').select('year').eq('is_active',true).order('year',{ascending:false})]);
+   if(b.error)throw b.error;if(y.error)throw y.error;
+   const activeBrands=(b.data||[]) as Brand[];const activeIds=new Set(activeBrands.map(x=>x.id));
+   setBrands(activeBrands);setModels(m.filter(x=>activeIds.has(x.brand_id)));setYears((y.data||[]).map((x:any)=>Number(x.year)));
+  }catch(e:any){setBrands([]);setModels([]);setYears([]);setLoadError(e?.message||'Unable to load vehicle master data')}
+  finally{setLoading(false)}
+ },[]);
  useEffect(()=>{void reload()},[reload]);
- return {brands,models,years,loading,reload};
+ return {brands,models,years,loading,loadError,reload};
 }
 
 export function VehicleFields({value,onChange,allowAdd=true,preserveModelOnBrandChange=false}:{value:VehicleSelection;onChange:(v:VehicleSelection)=>void;allowAdd?:boolean;preserveModelOnBrandChange?:boolean}){
@@ -41,7 +63,7 @@ export function VehicleFields({value,onChange,allowAdd=true,preserveModelOnBrand
  async function addBrand(raw:string){if(!supabase)return;const name=raw.trim().replace(/\s+/g,' ');const existing=master.brands.find(x=>norm(x.name)===norm(name));if(existing){onChange({...value,brand:existing.name});notify(`Brand already exists. Using ${existing.name}.`,'warning');return}const {data,error}=await supabase.rpc('add_vehicle_brand',{p_name:name});if(error){notify(error.message,'error');return}await master.reload();onChange({...value,brand:data?.name||name});notify('Car brand added.','success')}
  async function addYear(raw:string){if(!supabase)return;const year=Number(raw.trim());if(!Number.isInteger(year)||year<1900||year>2100){notify('Enter a valid 4-digit year.','warning');return}if(master.years.includes(year)){onChange({...value,year:String(year)});notify('Year already exists. Using the existing value.','warning');return}const {error}=await supabase.rpc('add_vehicle_year',{p_year:year});if(error){notify(error.message,'error');return}await master.reload();onChange({...value,year:String(year)});notify('Year model added.','success')}
  async function addModel(raw:string){if(!supabase)return;const name=raw.trim().replace(/\s+/g,' ');if(!value.brand.trim()){notify('Choose or add the car brand before adding a new model.','warning');return}const existingBrand=master.brands.find(x=>norm(x.name)===norm(value.brand));const duplicate=master.models.find(x=>norm(x.name)===norm(name)&&(!existingBrand||x.brand_id===existingBrand.id));if(duplicate){onChange({...value,model:duplicate.name});notify('Car model already exists for this brand. Using the existing value.','warning');return}const {data,error}=await supabase.rpc('add_vehicle_model',{p_brand_name:value.brand,p_name:name});if(error){notify(error.message,'error');return}await master.reload();onChange({...value,model:data?.name||name});notify('Car model added.','success')}
- return <div className="vehicle-fields"><AutoBox label="Year Model" value={value.year} placeholder="Search year..." options={master.years.map(String)} onChange={year=>onChange({...value,year})} onAdd={addYear} canAdd={allowAdd}/><AutoBox label="Car Brand" value={value.brand} placeholder="Search brand..." options={brandNames} onChange={brand=>onChange(preserveModelOnBrandChange?{...value,brand}:{...value,brand,model:''})} onAdd={addBrand} canAdd={allowAdd}/><AutoBox label="Car Model / Unit" value={value.model} placeholder="Search model..." options={modelNames} onChange={model=>onChange({...value,model})} onAdd={addModel} canAdd={allowAdd}/></div>
+ return <><div className="vehicle-fields"><AutoBox label="Year Model" value={value.year} placeholder="Search year..." options={master.years.map(String)} onChange={year=>onChange({...value,year})} onAdd={addYear} canAdd={allowAdd}/><AutoBox label="Car Brand" value={value.brand} placeholder="Search brand..." options={brandNames} onChange={brand=>onChange(preserveModelOnBrandChange?{...value,brand}:{...value,brand,model:''})} onAdd={addBrand} canAdd={allowAdd}/><AutoBox label="Car Model / Unit" value={value.model} placeholder="Search model..." options={modelNames} onChange={model=>onChange({...value,model})} onAdd={addModel} canAdd={allowAdd}/></div>{master.loadError&&<p className="small" role="alert" style={{color:"#b42318"}}>Unable to load vehicle list: {master.loadError}</p>}</>
 }
 
 export function VehicleFilterBar({value,onChange,onClear}:{value:VehicleSelection;onChange:(v:VehicleSelection)=>void;onClear:()=>void}){
