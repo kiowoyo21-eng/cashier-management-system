@@ -37,17 +37,21 @@ async function buildReportPdf(args:{
  beginningBalance:number;remainingBalance:number;checkDeposit:number;amountRequested:number;
 }){
  const {jsPDF}=await import('jspdf');
- const {id,expenses,periodStart,periodEnd,preparedBy,preparedSignature,beginningBalance,remainingBalance,checkDeposit,amountRequested}=args;
- const total=expenses.reduce((n,x)=>n+x.amount,0),branches=branchSummary(expenses);
+ const {id,expenses:allExpenses,periodStart,periodEnd,preparedBy,preparedSignature,beginningBalance,remainingBalance,checkDeposit,amountRequested}=args;
+ const total=allExpenses.reduce((n,x)=>n+x.amount,0),branches=branchSummary(allExpenses);
  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
  const W=297,H=210,M=10,YELLOW=[246,201,54] as [number,number,number];
+ const pageCount=Math.max(1,Math.ceil(allExpenses.length/30));
+ for(let pageIndex=0;pageIndex<pageCount;pageIndex++){
+ if(pageIndex>0)doc.addPage('a4','landscape');
+ const expenses=allExpenses.slice(pageIndex*30,(pageIndex+1)*30);
  doc.setFillColor(...YELLOW);doc.rect(0,0,W,8,'F');
  doc.setFont('helvetica','bold');doc.setTextColor(22,22,22);doc.setFontSize(15);doc.text('UNDERCHARGERS',M,16);
  doc.setFontSize(12.5);doc.text('RFP DISBURSEMENT REPORT',M,24);
- doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(90,90,90);doc.text('Parts and Supplies · One-page request summary',M,30);
+ doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(90,90,90);doc.text('Parts and Supplies · Up to 30 transactions per report page',M,30);
 
  doc.setDrawColor(225,225,225);doc.setFillColor(250,250,248);doc.roundedRect(M,34,W-M*2,18,2,2,'FD');
- const meta=[['Request No.',id],['Period Covered',`${compactDate(periodStart)} - ${compactDate(periodEnd)}`],['Prepared By',preparedBy||'PB Account'],['Transactions',String(expenses.length)]];
+ const meta=[['Request No.',id],['Period Covered',`${compactDate(periodStart)} - ${compactDate(periodEnd)}`],['Prepared By',preparedBy||'PB Account'],['Transactions',`${allExpenses.length} · Page ${pageIndex+1}/${pageCount}`]];
  meta.forEach(([k,v],i)=>{const x=M+4+i*68;doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(115,110,100);doc.text(k.toUpperCase(),x,40);doc.setFontSize(8.8);doc.setTextColor(30,30,30);doc.text(doc.splitTextToSize(v,62),x,46)});
 
  const tableTop=58,summaryTop=135,signatureTop=177;
@@ -94,7 +98,7 @@ async function buildReportPdf(args:{
    }
   });
   doc.setFont('helvetica','italic');doc.setFontSize(6.3);doc.setTextColor(120,120,120);
-  doc.text('Condensed transaction schedule. Full supplier, item, unit/plate, and receipt details are in the separate Receipts PDF.',M,summaryTop-1);
+  doc.text('Transaction details and receipt images are in the separate Receipts PDF.',M,summaryTop-1);
  }
 
  const bx=M,bw=127,fx=158,fw=129;
@@ -119,6 +123,7 @@ async function buildReportPdf(args:{
  await signatureBlock(M+blockW+gap,'VERIFIED BY','Accounting','Pending Accounting Verification');
  await signatureBlock(M+(blockW+gap)*2,'APPROVED BY','President','Pending President Approval');
  doc.setFont('helvetica','normal');doc.setFontSize(6.3);doc.setTextColor(120,120,120);doc.text(`Request ${id} · Receipts are provided in a separate PDF. Digital verification/approval is recorded in the audit trail.`,M,H-4);
+ }
  return doc.output('blob');
 }
 
@@ -175,7 +180,7 @@ export function RfpDisbursementModal({open,transactions,currentBalance,onClose,o
  async function saveCurrentSignature(){if(!supabase||busy||!signature||usingSavedSignature)return;setBusy(true);try{const path=await backend.uploadImage(signature,'saved-signatures');const {error}=await supabase.rpc('save_my_signature',{p_path:path});if(error)throw error;const url=await backend.fileUrl(path,1800);setSavedSignatureUrl(url||signature);notify('PB signature saved for future requests.','success')}catch(e){notify(e instanceof Error?e.message:'Unable to save PB signature.','error')}finally{setBusy(false)}}
  async function submit(){if(!supabase||busy||!expenses.length||missingReceipts||!pdfPath||!receiptsPdfPath||!signature||amountRequested<=0)return;setBusy(true);try{const id=await ensureRequestId();const sign=usingSavedSignature?null:await backend.uploadImage(signature,'rfp-disbursement-signatures');let signPath=sign;if(usingSavedSignature){const {data:{user}}=await supabase.auth.getUser();const {data:profile}=await supabase.from('profiles').select('saved_signature_path').eq('id',user?.id||'').maybeSingle();signPath=profile?.saved_signature_path||null}if(!signPath)throw new Error('Signature path is required');const {error}=await supabase.rpc('submit_rfp_disbursement_request_v3',{p_id:id,p_expense_ids:expenses.map(x=>x.id),p_report_pdf_path:pdfPath,p_receipts_pdf_path:receiptsPdfPath,p_signature_path:signPath,p_check_deposit:deposit,p_notes:notes});if(error)throw error;notify('RFP Disbursement Request sent to Accounting with separate report and receipts PDFs.','success');onDone();onClose()}catch(e){notify(e instanceof Error?e.message:'Unable to submit RFP Disbursement Request.','error')}finally{setBusy(false)}}
  if(!open)return null;
- return <div className="modalback"><div className="modal wide rfp-request-modal"><div className="hrow between wrap"><div><div className="eyebrow">PB · RFP</div><h2>RFP Disbursement Request</h2><p className="muted small">Parts and Supplies only. Generate a one-page Disbursement Report plus a separate Receipts PDF for Accounting review.</p></div><button className="btn ghost" onClick={onClose}>Close</button></div>
+ return <div className="modalback"><div className="modal wide rfp-request-modal"><div className="hrow between wrap"><div><div className="eyebrow">PB · RFP</div><h2>RFP Disbursement Request</h2><p className="muted small">Parts and Supplies only. Generate a Disbursement Report (30 transactions per page) plus a separate Receipts PDF for Accounting review.</p></div><button className="btn ghost" onClick={onClose}>Close</button></div>
  <div className="review-grid"><div><span>Request No.</span><strong>{requestId||'Generated with PDF'}</strong></div><div><span>Period Covered</span><strong>{periodStart} – {periodEnd}</strong></div><div><span>Balance</span><strong>{peso(beginningBalance)}</strong></div><div><span>Less: Expenses</span><strong>{peso(total)}</strong></div><div><span>Remaining</span><strong>{peso(remainingBalance)}</strong></div><div><span>Amount Requested</span><strong>{peso(amountRequested)}</strong></div></div>
  <label style={{maxWidth:320}}>Add: Check Deposit (₱)<input className="input" type="number" min="0" step="0.01" value={checkDeposit} onChange={e=>{setCheckDeposit(e.target.value);setPdfPath('');setPdfUrl('');setReceiptsPdfPath('');setReceiptsPdfUrl('')}} placeholder="0.00"/></label>
  {deposit>total&&<div className="notice">Check Deposit cannot exceed the expenses covered by this request.</div>}

@@ -4,7 +4,7 @@ export type LedgerEntry = { id: string; account:CashAccount; kind:'Additional Fu
 export type QuoteItem={type:'Service'|'Part';name:string;qty:number;price:number};
 export type PosPayment={amount:number;method:string;at:string;reference?:string;cardType?:string;terminalFee?:number};
 export type PosEntry = {
- id:string; client:string; phone:string; vehicle:string; vehicleYear?:string; vehicleBrand?:string; vehicleModel?:string; plate:string; concern:string;
+ id:string; branchId?:string; client:string; phone:string; vehicle:string; vehicleYear?:string; vehicleBrand?:string; vehicleModel?:string; plate:string; concern:string;
  items:QuoteItem[]; payments:PosPayment[]; costs:number; cogsItems?:{name:string;supplier:string;qty:number;unitCost:number}[]; status:string; createdAt:string; closedAt?:string;
  bsSi?:string; customerTin?:string; address?:string; mileage?:string; platform?:string; serviceAdvisor?:string; bookedBy?:string; mechanic?:string; remarks?:string;
  onlineExpense?:number; rfExpense?:number;
